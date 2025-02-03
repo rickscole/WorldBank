@@ -55,6 +55,22 @@ select
     , change_in_percent_gdp = b.gdp_by_year - a.gdp_by_year
     , rate_of_change_in_percent_gdp = b.gdp_by_year / a.gdp_by_year - 1
     , gdp_rate_of_change = cast(b.gdp as float) / cast(a.gdp as float) - 1
+    , economy_start_year_end_year = concat(a.economy, ', ', a.year, '-', b.year)
+    , intitial_gdp_group = 
+        case 
+        when a.gdp <= 100000000 then 'Less than $100 million'
+        when a.gdp <= 500000000 then '$100 million to $500 million' 
+        when a.gdp <= 1000000000 then '$500 million to $1 billion'
+        when a.gdp <= 5000000000 then '$1 billion to $5 billion'
+        when a.gdp <= 10000000000 then '$5 billion to $10 billion'
+        when a.gdp <= 50000000000 then '$10 billion to $50 billion'
+        when a.gdp <= 100000000000 then '$50 billion to $100 billion'
+        when a.gdp <= 500000000000 then '$100 billion to $500 billion'
+        when a.gdp <= 1000000000000 then '$500 billion to $1 trillion'
+        when a.gdp <= 5000000000000 then '$1 trillion to $5 trillion'
+        when a.gdp > 5000000000000 then '$50 billion (+)'
+        else 'Other'
+        end
 from temp.wb_gdp_change_year_pairs_01 a 
 inner join temp.wb_gdp_change_year_pairs_01 b on 1 = 1 
     and a.economy = b.economy 
@@ -91,5 +107,5 @@ if object_id('temp.wb_gdp_change_year_pairs_00_00', 'U') is not null
 drop table temp.wb_gdp_change_year_pairs_00_00;
 if object_id('temp.wb_gdp_change_year_pairs_00', 'U') is not null
 drop table temp.wb_gdp_change_year_pairs_00; 
-if object_id('temp.wb_gdp_change_year_pairs_01', 'U') is not null
-drop table temp.wb_gdp_change_year_pairs_01; 
+--if object_id('temp.wb_gdp_change_year_pairs_01', 'U') is not null
+--drop table temp.wb_gdp_change_year_pairs_01; 
