@@ -1,0 +1,68 @@
+/*
+select distinct resource from wb.economy_time_resource
+
+
+select * from wb.economy_time_resource
+where resource = 'NY.GDP.MKTP.CD' and economy = 'Azerbaijan'
+order by time asc
+
+
+select economy, min_value from [WB].[economy_resource_highlight] where resource = 'NY.GDP.MKTP.CD'
+
+select economy, max_value from [WB].[economy_resource_highlight] where resource = 'NY.GDP.MKTP.CD'
+order by max_value asc
+
+select * 
+from temp.wb_gdp_change_year_pairs_05
+where economy = 'United States'
+*/
+
+
+
+
+-- pre drop tables
+if object_id('temp.year_pivot_economy_resource_growth_rankings_00', 'U') is not null
+drop table temp.year_pivot_economy_resource_growth_rankings_00;
+if object_id('temp.year_pivot_economy_resource_growth_rankings_01', 'U') is not null
+drop table temp.year_pivot_economy_resource_growth_rankings_01;
+if object_id('temp.year_pivot_economy_resource_growth_rankings_02', 'U') is not null
+drop table temp.year_pivot_economy_resource_growth_rankings_02;
+
+
+-- base data
+select 
+    ert.*
+into temp.year_pivot_economy_resource_growth_rankings_00
+from wb.economy_time_resource ert 
+inner join [WB].[country_name_translation] cnt on ert.economy = cnt.name
+where 1 = 1
+    and ert.resource = 'NY.GDP.MKTP.CD'
+
+
+-- add roc
+select 
+    a.*
+    , previous_value = b.value 
+    , value_roc = case when b.value = 0 then null else cast(a.value as float) / cast(b.value as float) - 1 end
+into temp.year_pivot_economy_resource_growth_rankings_01
+from temp.year_pivot_economy_resource_growth_rankings_00 a
+inner join temp.year_pivot_economy_resource_growth_rankings_00 b on 1 = 1
+    and a.economy = b.economy
+    and a.resource = b.resource
+    and a.time = b.time + 1
+
+
+select 
+    a.*
+    , economy_resource_rank_year = row_number() over(partition by a.time order by a.value_roc desc)
+into temp.year_pivot_economy_resource_growth_rankings_02
+from temp.year_pivot_economy_resource_growth_rankings_01 a 
+
+
+-- post drop tables
+if object_id('temp.year_pivot_economy_resource_growth_rankings_00', 'U') is not null
+drop table temp.year_pivot_economy_resource_growth_rankings_00;
+if object_id('temp.year_pivot_economy_resource_growth_rankings_01', 'U') is not null
+drop table temp.year_pivot_economy_resource_growth_rankings_01;
+if object_id('temp.year_pivot_economy_resource_growth_rankings_02', 'U') is not null
+drop table temp.year_pivot_economy_resource_growth_rankings_02;
